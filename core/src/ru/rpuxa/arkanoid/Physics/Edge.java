@@ -22,7 +22,7 @@ public class Edge {
     float distance(double[][] vector) {
         if (isNull)
             return Float.POSITIVE_INFINITY;
-        float scl = Intersector.intersectRayRay(new Vector2((float) vector[0][0], (float) vector[0][1]), new Vector2((float) vector[1][0], (float) vector[1][1]), lineSegment.first, lineSegment.second);
+        float scl = Intersector.intersectRayRay(lineSegment.first, lineSegment.second, new Vector2((float) vector[0][0], (float) vector[0][1]), new Vector2((float) vector[1][0], (float) vector[1][1]));
         if (scl > 0 && scl <= 1) {
             scl = Intersector.intersectRayRay(new Vector2((float) vector[0][0], (float) vector[0][1]), new Vector2((float) vector[1][0], (float) vector[1][1]), lineSegment.second, lineSegment.first);
             if (scl < 0)

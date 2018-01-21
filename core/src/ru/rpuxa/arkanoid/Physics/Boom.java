@@ -6,19 +6,21 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import ru.rpuxa.arkanoid.Main.Game;
 import ru.rpuxa.arkanoid.Main.Visual;
 
+import static ru.rpuxa.arkanoid.Main.Visual.textureBank;
+
 public class Boom {
-    Texture texture;
+    public Texture texture;
     int radius;
     boolean disposed;
     int x, y;
     Game game;
 
-    public Boom(String  texture, int x, int y, Game game) {
-        this.texture = new Texture(texture);
+    public Boom(int x, int y, Game game) {
         this.x = x;
         this.y = y;
         radius = 1;
         this.game = game;
+        texture = textureBank.get("boom");
     }
 
     public Boom(){

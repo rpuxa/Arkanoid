@@ -7,17 +7,19 @@ import ru.rpuxa.arkanoid.Main.Visual;
 
 import java.util.*;
 
+import static ru.rpuxa.arkanoid.Main.Visual.textureBank;
+
 public class Let {
     static Texture[] textures;
     private Particle[] particles;
     private Texture[] numberTextures;
     public int x, y;
-    private int size;
-    public int count;
+    public int size;
+    public double count;
     private double[] ballPosition;
     private Game game;
 
-    public Let(int x, int y, int count, Game game) {
+    public Let(int x, int y, double count, Game game) {
         size = Visual.WIDTH / 8;
         this.x = x;
         this.y = y;
@@ -25,13 +27,8 @@ public class Let {
         this.game = game;
     }
 
-    private static final String textureLetPath = "Blocks\\";
-
     public static void setTextures() {
-        String[] texturePath = {textureLetPath + "2.png", textureLetPath + "0.png", textureLetPath + "1.png", textureLetPath + "3.png"};
-        textures = new Texture[texturePath.length];
-        for (int i = 0; i < texturePath.length; i++)
-            textures[i] = new Texture(texturePath[i]);
+        textures = new Texture[] {textureBank.get("block0"), textureBank.get("block1"), textureBank.get("block2"), textureBank.get("block3")};
     }
 
 
@@ -44,13 +41,13 @@ public class Let {
         removePoints(-count, center);
     }
 
-    public void removePoints(int count, double[] ballPosition) {
+    public void removePoints(double count, double[] ballPosition) {
         this.count += count;
         if (this.count <= 0) {
-            game.score.addScore(5);
+            game.score.addPoint((int) (5 - count));
             game.updateEdges();
         } else
-            game.score.addScore(1);
+            game.score.addPoint(1);
         this.ballPosition = ballPosition;
         numberTextures = null;
     }
@@ -73,7 +70,7 @@ public class Let {
         if (count > 0) {
             batch.draw(getTexture(), x - size / 2, y - size / 2, size, size);
             if (numberTextures == null)
-                numberTextures = Number.parseNumber(count);
+                numberTextures = Number.parseNumber((int) Math.ceil(count));
             Number.renderNumber(batch, numberTextures, x, y, size / 4, size / 2);
         } else {
             if (particles == null) {

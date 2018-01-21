@@ -1,27 +1,32 @@
 package ru.rpuxa.arkanoid.Physics;
 
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import java.util.ArrayList;
 
+import ru.rpuxa.arkanoid.Main.Game;
 import ru.rpuxa.arkanoid.Main.Visual;
 import ru.rpuxa.arkanoid.Skins.BallInfo;
 import ru.rpuxa.arkanoid.Skins.CannonInfo;
 
+import static ru.rpuxa.arkanoid.Main.Visual.textureBank;
+
 public class Cannon {
-    CannonInfo info;
+    public CannonInfo info;
     public int x, y;
     public int countBalls;
     public int platformWidth, platformHeight;
     public int barrelWidth, barrelHeight;
     public int[] platformRotateCenter, barrelRotateCenter;
     double angle;
+    public boolean isDestroyed;
+    private Texture destroyed;
     ArrayList<Ball> balls;
 
-    public Cannon(CannonInfo info, int y, ArrayList<Ball> balls) {
+    public Cannon(CannonInfo info, ArrayList<Ball> balls) {
         this.info = info;
-        x = Visual.WIDTH / 2 - 100;
-        this.y = y;
+        setStartPos();
         this.platformWidth = info.width;
         this.platformHeight = info.texture[1].getHeight() * platformWidth / info.texture[1].getWidth();
         barrelWidth = info.texture[0].getWidth() * platformWidth / info.texture[1].getWidth();
@@ -34,7 +39,13 @@ public class Cannon {
                 info.rotateBarrelCenter[0] * barrelWidth / info.texture[0].getWidth(),
                 info.rotateBarrelCenter[1] * barrelHeight / info.texture[0].getHeight()
         };
+        destroyed = textureBank.get("destroyedCannon");
         this.balls = balls;
+    }
+
+    public void setStartPos() {
+        x = Visual.WIDTH / 2 - 100;
+        y = Visual.HEIGHT - Visual.WIDTH / 8 * 13;
     }
 
     public void shoot(BallInfo ballInfo) {
@@ -46,7 +57,7 @@ public class Cannon {
                     balls.add(new Ball(ballInfo
                             , x + platformRotateCenter[0] + barrelWidth * Math.cos(angle),
                             y + platformRotateCenter[1] + barrelWidth * Math.sin(angle),
-                            angle));
+                            angle, info.damage, info.speed));
                     try {
                         Thread.sleep(time);
                     } catch (InterruptedException ignored) {
@@ -55,15 +66,22 @@ public class Cannon {
         }}).start();
     }
 
-    public void setAngle(int[] touch) {
+    public boolean setAngle(int[] touch, Game game) {
         double angle = Math.atan2(touch[1] - (y + platformRotateCenter[1]), touch[0] - (x + platformRotateCenter[0]));
-        if (angle >= Math.PI / 18 && angle <= Math.PI * 17 / 18)
+        if (game.aiming = (angle >= Math.PI / 18 && angle <= Math.PI * 17 / 18)) {
             this.angle = angle;
+            return true;
+        }
+        return false;
     }
 
     public void render(SpriteBatch batch) {
-        batch.draw(info.texture[1], x, y, platformWidth, platformHeight);
-        batch.draw(info.barrel, x + platformRotateCenter[0] - barrelRotateCenter[0], y + platformRotateCenter[1] - barrelRotateCenter[1],
-                barrelRotateCenter[0], barrelRotateCenter[1], barrelWidth, barrelHeight, 1, 1, (float) Math.toDegrees(angle));
+        if (isDestroyed) {
+            batch.draw(destroyed, x, y, platformWidth, platformHeight);
+        } else {
+            batch.draw(info.texture[1], x, y, platformWidth, platformHeight);
+            batch.draw(info.barrel, x + platformRotateCenter[0] - barrelRotateCenter[0], y + platformRotateCenter[1] - barrelRotateCenter[1],
+                    barrelRotateCenter[0], barrelRotateCenter[1], barrelWidth, barrelHeight, 1, 1, (float) Math.toDegrees(angle));
+        }
     }
 }

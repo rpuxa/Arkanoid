@@ -9,23 +9,28 @@ public class SecurityInt {
 
     public SecurityInt(int value) {
         this.value = value;
+        hash = hashGen(value);
     }
 
     public int getValue() {
+        checkHack();
         return value;
     }
 
     public void setValue(int value) {
+        checkHack();
         this.value = value;
         hash = hashGen(value);
     }
 
     public void add(int value) {
+        checkHack();
         setValue(this.value + value);
     }
 
-    public boolean checkHack() {
-        return hashGen(value) != hash;
+    public void checkHack() {
+        if (hashGen(value) != hash)
+            SecurityException.throwException(value, hash);
     }
 
     private long hashGen(int value) {

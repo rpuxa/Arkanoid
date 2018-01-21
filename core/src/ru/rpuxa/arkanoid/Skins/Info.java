@@ -9,19 +9,21 @@ import java.io.IOException;
 
 public class Info extends CostInfo {
 
+    private static final long serialVersionUID = 88462314723L;
+
     public String[] texturePath;
     public transient Texture[] texture;
-    public int damage;
-    public int speed;
+    public double damage;
+    public double speed;
 
-    public Info(String[] texturePath, int currency, int cost, int damage, int speed, int id) {
+    public Info(String[] texturePath, int currency, int cost, double damage, double speed, int id) {
         super(currency, cost, id);
         this.texturePath = texturePath;
         this.damage = damage;
         this.speed = speed;
     }
 
-    void recombineTextures() {
+    public void recombineTextures() {
         try {
             texture = new Texture[texturePath.length];
             for (int i = 0; i < texturePath.length; i++) {

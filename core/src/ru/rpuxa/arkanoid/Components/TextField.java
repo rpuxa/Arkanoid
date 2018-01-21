@@ -8,6 +8,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 
+import static ru.rpuxa.arkanoid.Main.Visual.textureBank;
+
 
 public class TextField implements Child {
     int x, y;
@@ -23,8 +25,8 @@ public class TextField implements Child {
         this.y = y;
         this.width = width;
         this.height = height;
-        this.background = new Texture(texturePathActive);
-        this.disabledBackground = new Texture(texturePathDeactive);
+        this.background = textureBank.get(texturePathActive);
+        this.disabledBackground = textureBank.get(texturePathDeactive);
         this.hint = hint;
         this.title = title;
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("Fonts\\regular.otf"));
@@ -45,7 +47,6 @@ public class TextField implements Child {
 
             @Override
             public void canceled() {
-                text = "";
             }
         };
         Gdx.input.getTextInput(listener, title, text, (title.equals("")) ? hint : "");

@@ -4,6 +4,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
+import ru.rpuxa.arkanoid.Account.Account;
+import ru.rpuxa.arkanoid.Account.SecurityInt;
 import ru.rpuxa.arkanoid.Account.Server.Connection;
 import ru.rpuxa.arkanoid.Account.Server.Constants;
 import ru.rpuxa.arkanoid.Main.Game;
@@ -15,6 +17,7 @@ import ru.rpuxa.arkanoid.Skins.Info;
 
 import static ru.rpuxa.arkanoid.Account.Account.STARS;
 import static ru.rpuxa.arkanoid.Main.Visual.imei;
+import static ru.rpuxa.arkanoid.Main.Visual.textureBank;
 
 public class StoreButton extends ConfirmButton {
 
@@ -24,25 +27,28 @@ public class StoreButton extends ConfirmButton {
     private double platformWidth, platformHeight;
     private double barrelWidth, barrelHeight;
     private double[] platformRotateCenter, barrelRotateCenter;
-    private boolean sold;
+    boolean sold, selected;
     private Text speedText, damageText, moneyText;
-
-    static Texture speed, damage, star, ruby, soldTexture;
+    private StoreButtonGroup group;
+    private Texture speed, damage, star, ruby, soldTexture, selectedTexture;
 
     private StoreButton(int num, Info info, boolean sold) {
-        super(315, 1700 - num * 300, 600, 250, "storeButton.png");
+        super(315, 1700 - num * 300, 600, 250, "storeButton");
         this.sold = sold;
         id = info.id;
         speedText = new Text("x" + info.speed, (int) (12d / 200 * width), Color.BLACK);
         damageText = new Text("x" + info.damage, (int) (12d / 200 * width), Color.BLACK);
         moneyText = new Text("" + info.cost, (int) (12d / 200 * width), Color.BLACK);
-        if (speed == null) {
-            speed = new Texture("speed.png");
-            damage = new Texture("damage.png");
-            star = new Texture("star.png");
-            ruby = new Texture("ruby.png");
-            soldTexture = new Texture("sold.png");
-        }
+        speed = textureBank.get("speed");
+        damage = textureBank.get("damage");
+        star = textureBank.get("star");
+        ruby = textureBank.get("ruby");
+        soldTexture = textureBank.get("sold");
+        selectedTexture = textureBank.get("selected");
+    }
+
+    public void setGroup(StoreButtonGroup group) {
+        this.group = group;
     }
 
     private static final double productX = -212d / 500, productY = -40d / 200, productXCenter = -204d / 500;
@@ -72,24 +78,40 @@ public class StoreButton extends ConfirmButton {
         return button;
     }
 
-    public static StoreButton[] createBallButtons() {
+    public static Scroll createBallButtons() {
         StoreButton[] buttons = new StoreButton[BallInfo.balls.length];
+        StoreButtonGroup group = new StoreButtonGroup();
         for (int i = 0; i < buttons.length; i++) {
             BallInfo info = BallInfo.balls[i];
             boolean sold = Game.account.haveItem(info.id);
             buttons[i] = createButton(i, info, sold);
+            buttons[i].selected = buttons[i].id == Game.account.ballSelected.getValue();
+            buttons[i].setGroup(group);
+            group.add(buttons[i]);
         }
-        return buttons;
+        return createScroll(buttons);
     }
 
-    public static StoreButton[] createCannonButtons() {
+    public static Scroll createCannonButtons() {
         StoreButton[] buttons = new StoreButton[CannonInfo.cannons.length];
+        StoreButtonGroup group = new StoreButtonGroup();
         for (int i = 0; i < buttons.length; i++) {
             CannonInfo info = CannonInfo.cannons[i];
             boolean sold = Game.account.haveItem(info.id);
             buttons[i] = createButton(i, info, sold);
+            buttons[i].selected = buttons[i].id == Game.account.cannonSelected.getValue();
+            buttons[i].setGroup(group);
+            group.add(buttons[i]);
         }
-        return buttons;
+        return createScroll(buttons);
+    }
+
+    private static Scroll createScroll(StoreButton[] buttons) {
+        int shift = buttons.length * 300 - (Visual.WIDTH - 450) - 1040;
+        if (shift < 0)
+            shift = 0;
+        return new Scroll(0, Visual.WIDTH - 450, "scroll", "upTextureScroll", shift,
+                buttons);
     }
 
     @Override
@@ -113,6 +135,7 @@ public class StoreButton extends ConfirmButton {
                 Game.loading.startLoading();
                if ((boolean) Connection.sendCommand(Constants.BUY_ITEM, id, imei)[0].data){
                    Game.account.addItem(id);
+                   Game.account.addMoney(((product0 == null) ? product1.currency : product0.currency), -((product0 == null) ? product1.cost : product0.cost));
                    sold = true;
                    Visual.message.send("Sold!");
                } else {
@@ -121,6 +144,25 @@ public class StoreButton extends ConfirmButton {
                 Game.loading.stopLoading();
             }
         }).start();
+    }
+
+    @Override
+    public void onClick(int x, int y) {
+        super.onClick(x, y);
+        if (showButtons() && visibleButtons) {
+            group.setVisualButtonsFalse();
+            visibleButtons = true;
+        }
+        if (sold) {
+            group.setSelectedFalse();
+            selected = true;
+            if (product0 == null) {
+                Game.account.cannonSelected = new SecurityInt(id);
+                Visual.game.cannon.info = CannonInfo.get(id);
+            } else {
+                Game.account.ballSelected = new SecurityInt(id);
+            }
+        }
     }
 
     private static final double parametersX = -70d / 500, parametersHeight = 31d / 200, parametersWidth = 31d / 500;
@@ -160,7 +202,14 @@ public class StoreButton extends ConfirmButton {
                 (float) (parametersWidth  * width),
                 (float) (parametersHeight * height)
         );
-        if (sold)
+        if (selected) {
+            batch.draw(selectedTexture,
+                    x + parent.getX() + (float) (soldX * width),
+                    y + parent.getY() + (float) (soldY * height),
+                    (float) (soldWidth  * width),
+                    (float) (soldHeight * height)
+            );
+        } else if (sold)
             batch.draw(soldTexture,
                     x + parent.getX() + (float) (soldX * width),
                     y + parent.getY() + (float) (soldY * height),

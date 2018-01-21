@@ -43,6 +43,10 @@ public abstract class Button implements Touchable {
         return false;
     }
 
+    public void touchUpWithoutClick() {
+        firstTouch = false;
+    }
+
     @Override
     public void touchUp() {
         checkClick(touchX, touchY);

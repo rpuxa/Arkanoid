@@ -8,14 +8,17 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.collision.Ray;
 
-import ru.rpuxa.arkanoid.Skins.CacheMaster;
+import ru.rpuxa.arkanoid.Account.Server.Connection;
+import ru.rpuxa.arkanoid.Cache.CacheMaster;
+import ru.rpuxa.arkanoid.Cache.TextureBank;
 
 public class Visual extends ApplicationAdapter {
 	private SpriteBatch batch;
 	private OrthographicCamera camera;
-	private Game game;
+	public static Game game;
 	public static Message message;
 	public static String imei;
+	public static TextureBank textureBank = new TextureBank();
 
 	public static final boolean ONLINE_MODE = true;
 
@@ -27,6 +30,7 @@ public class Visual extends ApplicationAdapter {
 		batch = new SpriteBatch();
 		camera = new OrthographicCamera();
 		camera.setToOrtho(false, WIDTH, HEIGHT);
+		textureBank.fill(null);
 		CacheMaster.loadUpdates();
 		game = new Game();
 		Gdx.input.setInputProcessor(getInput());
@@ -62,7 +66,6 @@ public class Visual extends ApplicationAdapter {
 
 			@Override
 			public boolean keyTyped(char character) {
-				game.gameOver();
 				return false;
 			}
 

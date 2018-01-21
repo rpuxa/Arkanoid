@@ -3,6 +3,8 @@ package ru.rpuxa.arkanoid.Components;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
+import static ru.rpuxa.arkanoid.Main.Visual.textureBank;
+
 public abstract class ConfirmButton extends Button implements Child {
 
     Parent parent;
@@ -12,8 +14,8 @@ public abstract class ConfirmButton extends Button implements Child {
 
     public ConfirmButton(int x, int y, int width, int height, String texturePath) {
         super(x, y, width, height, 0);
-        button = new Texture(texturePath);
-        accept = new ButtonsToConfirm((int) (96d / 500 * width), 0, (int) (95d / 500 * width), (int) (95d / 200 * height), "roundGreenButton.png", this) {
+        button = textureBank.get(texturePath);
+        accept = new ButtonsToConfirm((int) (96d / 500 * width), 0, (int) (95d / 500 * width), (int) (95d / 200 * height), "roundGreenButton", this) {
             @Override
             public void onClick(int x, int y) {
                 onAccept();
@@ -21,7 +23,7 @@ public abstract class ConfirmButton extends Button implements Child {
             }
         };
 
-        deny = new ButtonsToConfirm((int) (196d / 500 * width), 0, (int) (95d / 500 * width), (int) (95d / 200 * height), "roundRedButton.png", this) {
+        deny = new ButtonsToConfirm((int) (196d / 500 * width), 0, (int) (95d / 500 * width), (int) (95d / 200 * height), "roundRedButton", this) {
             @Override
             public void onClick(int x, int y) {
                 visibleButtons = false;
@@ -107,7 +109,7 @@ public abstract class ConfirmButton extends Button implements Child {
 
         ButtonsToConfirm(int x, int y, int width, int height, String texturePath, ConfirmButton parent) {
             super(x, y, width, height, 3);
-            texture = new Texture(texturePath);
+            texture = textureBank.get(texturePath);
             this.parent = parent;
         }
 

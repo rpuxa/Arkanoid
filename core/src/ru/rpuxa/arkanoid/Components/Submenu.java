@@ -86,6 +86,7 @@ public class Submenu implements Child, Parent {
     @Override
     public void render(SpriteBatch batch, double delta) {
         batch.draw(backgrounds[select], x + parent.getX(), y + parent.getY(), width, height);
+        if (children.length > 0)
         for (int j = 0; j < children[select].length; j++) {
             children[select][j].render(batch, delta);
         }

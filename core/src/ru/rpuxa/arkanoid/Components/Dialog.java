@@ -4,6 +4,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import ru.rpuxa.arkanoid.Main.Visual;
 
+import static ru.rpuxa.arkanoid.Main.Visual.textureBank;
+
 public class Dialog implements Touchable, Parent {
     int x, y;
     public int width, height;
@@ -17,7 +19,7 @@ public class Dialog implements Touchable, Parent {
         this.height = height;
         this.turnable = turnable;
         this.children = children;
-        background = new Texture(texturePath);
+        background = textureBank.get(texturePath);
         x = Visual.WIDTH / 2;
         y = Visual.HEIGHT / 2;
     }

@@ -32,7 +32,7 @@ public class Connection {
         return sendCommand(new Command(id, object, from));
     }
 
-    public static Command[] sendCommand(int id) {
-        return sendCommand(id, null);
+    public static Command[] sendCommand(int id, String from) {
+        return sendCommand(id, null, from);
     }
 }

@@ -4,35 +4,39 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 import ru.rpuxa.arkanoid.Account.Account;
 import ru.rpuxa.arkanoid.Account.LoginDialog;
-import ru.rpuxa.arkanoid.Account.ServerAccount;
 import ru.rpuxa.arkanoid.Components.Child;
-import ru.rpuxa.arkanoid.Components.ConfirmButton;
 import ru.rpuxa.arkanoid.Components.Dialog;
 import ru.rpuxa.arkanoid.Components.GameButton;
+import ru.rpuxa.arkanoid.Components.GameOver;
 import ru.rpuxa.arkanoid.Components.Menu;
 import ru.rpuxa.arkanoid.Components.MoneyBar;
 import ru.rpuxa.arkanoid.Components.Scroll;
 import ru.rpuxa.arkanoid.Components.StoreButton;
 import ru.rpuxa.arkanoid.Components.Submenu;
 import ru.rpuxa.arkanoid.Components.YesNoDialog;
+import ru.rpuxa.arkanoid.Physics.AimLine;
 import ru.rpuxa.arkanoid.Physics.Ball;
 import ru.rpuxa.arkanoid.Physics.Boom;
 import ru.rpuxa.arkanoid.Physics.Cannon;
 import ru.rpuxa.arkanoid.Physics.Edge;
+import ru.rpuxa.arkanoid.Physics.Explosion;
 import ru.rpuxa.arkanoid.Physics.Let;
 import ru.rpuxa.arkanoid.Physics.LineSegment;
+import ru.rpuxa.arkanoid.Physics.Number;
 import ru.rpuxa.arkanoid.Physics.Power;
 import ru.rpuxa.arkanoid.Physics.Score;
 import ru.rpuxa.arkanoid.Skins.BallInfo;
+import ru.rpuxa.arkanoid.Cache.CacheMaster;
 import ru.rpuxa.arkanoid.Skins.CannonInfo;
 
+import static ru.rpuxa.arkanoid.Main.Visual.textureBank;
+
 public class Game {
-    Texture background;
+    Texture background, tip;
     public Let[][] lets;
     public ArrayList<Edge> letEdges;
     public ArrayList<Ball> balls;
@@ -43,25 +47,32 @@ public class Game {
     public Dialog dialog;
     Controller controller;
     Boom boom;
+    Explosion explosion;
+    AimLine aimLine;
     public Score score;
+    GameOver gameOver;
     private boolean[] canShoot = {true};
-    private int lvl;
-    boolean gameStarted;
+    public boolean aiming = false;
+    public int lvl;
+    boolean gameStarted, menuOpened, gameLosed;
 
     public static Loading loading;
     public static Account account;
 
     Game() {
-
+        gameOver = new GameOver("gameOver");
+        explosion = new Explosion(30, "explosion", 6, 8);
+        tip = textureBank.get("tip0");
         boom = new Boom();
-        loading = new Loading("loading.png");
+        Number.setTextures();
+        loading = new Loading("loading");
         balls = new ArrayList<>();
-        score = new Score(Visual.WIDTH / 2 - 30, 145);
+        score = new Score();
         lets = new Let[8][14];
         powers = new ArrayList<>();
         letEdges = new ArrayList<>();
         gameButtons = new GameButton[] {
-                new GameButton(995, 80, 120, 120, "accelerationGameButton.png") {
+                new GameButton(995, 80, 120, 120, "accelerationGameButton") {
 
                     static final double MULTIPLY_SPEED = 2;
 
@@ -84,30 +95,33 @@ public class Game {
                     @Override
                     public void onClick(int x, int y) {}
                 },
-                new GameButton(250, 80, 120, 120, "foldBallsGameButton.png") {
+                new GameButton(250, 80, 120, 120, "foldBallsGameButton") {
                     @Override
                     public void onClick(int x, int y) {
                         foldBalls();
                     }
                 },
-                new GameButton(81, 80, 120, 120, "backToMenuGameButton.png") {
+                new GameButton(81, 80, 120, 120, "backToMenuGameButton") {
                     @Override
                     public void onClick(int x, int y) {
                         dialog = new YesNoDialog("Quit game?? Are you sure??") {
                             @Override
                             public void onAccept() {
                                 balls.clear();
+                                cannon.setStartPos();
                                 gameStarted = false;
+                                cannon.isDestroyed = false;
+                                gameOver.dismiss();
                             }
                         };
                     }
                 }
         };
         menus = new Menu[]{
-                new Menu(Visual.WIDTH - 200, "storeMenu.png", true, 200,
+                new Menu(Visual.WIDTH - 200, "storeMenu", "storeMenuButton", true, 200,
                         storeSubmenu = new Submenu(
                                 175, 0, Visual.WIDTH - 450, Visual.HEIGHT,
-                                new Texture[]{new Texture("badlogic.jpg"), new Texture("badlogic.jpg"), new Texture("badlogic.jpg")},
+                                new Texture[]{textureBank.get("no"), textureBank.get("no"), textureBank.get("no")},
                                 new Child[0][0],
                                 new Submenu.ShiftButton[]{
                                         new Submenu.ShiftButton(97, 1815, 130, 121),
@@ -115,22 +129,26 @@ public class Game {
                                         new Submenu.ShiftButton(97, 1418, 130, 121),
                                 }
                         ),
-                        moneyBarStar = new MoneyBar("dialog.png", 100, 40, 300, 80, 0),
-                        moneyBarRuby = new MoneyBar("dialog.png", 480, 40, 300, 80, 1)
+                        moneyBarStar = new MoneyBar("dialog", 100, 40, 300, 80, 0),
+                        moneyBarRuby = new MoneyBar("dialog", 480, 40, 300, 80, 1)
                 )
         };
+        controller = new Controller(canShoot, this);
+        cannon = new Cannon(CannonInfo.get(1), balls);
+        gameStarted = false;
+        background = textureBank.get("background");
+        aimLine = new AimLine(cannon);
+        Let.setTextures();
+        if (!CacheMaster.loadAct(this))
+            nextLevel();
+        updateEdges();
         if (Visual.ONLINE_MODE)
             dialog = new LoginDialog(this);
         else {
             account = new Account();
             dialog = new Dialog();
+            loginSuccessful();
         }
-        cannon = new Cannon(CannonInfo.cannons[0], Visual.HEIGHT - Visual.WIDTH / 8 * 13, balls);
-        controller = new Controller(canShoot, this);
-        gameStarted = true;
-        background = new Texture("background.png");
-        Let.setTextures();
-        nextLevel();
     }
 
     public void addBalls(int count) {
@@ -224,15 +242,18 @@ public class Game {
         }
     }
 
-    private void nextLevel() {
+    private boolean getRandomBoolean(double percent, double percent1) {
+        return new Random().nextDouble() < percent + percent - percent * percent1;
+    }
 
+    public void nextLevel() {
         lvl++;
         cannon.countBalls++;
         for (Power power : powers.toArray(new Power[0]))
             if (power.isUsed())
                 powers.remove(power);
         powers.clear();
-        for (int y = 9; y >= 0; y--) {
+        for (int y = 10; y >= 0; y--) {
             for (int x = 0; x < 8; x++) {
                 if (y == 0) {
                     lets[x][y] = null;
@@ -240,10 +261,39 @@ public class Game {
                     lets[x][y] = lets[x][y - 1];
             }
         }
+
+        double countLets = 0;
+
         for (Let[] let0 : lets)
             for (Let let : let0)
-                if (let != null)
+                if (let != null) {
                     let.moveDown();
+                    countLets++;
+                }
+        countLets /= 30;
+
+        for (Let[] let1 : lets) {
+            Let let = let1[10];
+            if (let != null) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        canShoot[0] = false;
+                        int x = cannon.x;
+                        Random random = new Random();
+                        for (int i = 0; i < 100; i++) {
+                            cannon.x = (int) (x + random.nextDouble() * i / 4);
+                            try {
+                                Thread.sleep(20);
+                            } catch (InterruptedException ignored) {
+                            }
+                        }
+                        gameOver();
+                    }
+                }).start();
+                return;
+            }
+        }
 
         int countInFirstRow = 0;
         for (int i = 0; i < 8; i++) {
@@ -267,15 +317,15 @@ public class Game {
                 if ((i != 7 && lets[i + 1][1] != null))
                     count++;
                 if (count == 3) {
-                    if (random.nextInt(10) != 0)
+                    if (getRandomBoolean(0.9, countLets))
                         spawnLet(i);
                 } else if (count == 2) {
-                    if (random.nextInt(10) <= 3)
+                    if (getRandomBoolean(.4, countLets))
                         spawnLet(i);
                 } else if (count == 1)
-                    if (random.nextBoolean())
+                    if (getRandomBoolean(.5, countLets))
                         spawnLet(i);
-                    else if (random.nextInt(10) == 0)
+                    else if (getRandomBoolean(.1, countLets))
                         spawnLet(i);
             }
 
@@ -312,6 +362,7 @@ public class Game {
             }
         }
         updateEdges();
+        CacheMaster.saveAct(this);
     }
 
     private void spawnLet(int column) {
@@ -325,8 +376,20 @@ public class Game {
     }
 
     void gameOver() {
+        gameLosed = true;
         canShoot[0] = false;
-        boom = new Boom("boom.png", cannon.x + cannon.platformWidth / 2, cannon.y, this);
+        boom = new Boom(cannon.x + cannon.platformWidth / 2, cannon.y, this);
+        explosion.explode(cannon.x + cannon.platformWidth / 2, cannon.y + cannon.platformHeight / 2, 600);
+        try {
+            Thread.sleep(300);
+        } catch (InterruptedException ignored) {
+        }
+        cannon.isDestroyed = true;
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ignored) {
+        }
+        gameOver.show();
     }
 
     void foldBalls() {
@@ -334,27 +397,22 @@ public class Game {
             ball.fold = true;
     }
 
-    Submenu storeSubmenu;
-    MoneyBar moneyBarStar, moneyBarRuby;
+    private Submenu storeSubmenu;
+    private MoneyBar moneyBarStar, moneyBarRuby;
 
     public void loginSuccessful() {
         storeSubmenu.setChildren(new Child[][]{
-                {new Scroll(0, Visual.WIDTH - 450, "scroll.png", "upTextureScroll.png", 2000,
-                        StoreButton.createCannonButtons()
-                )},
-                {new Scroll(0, Visual.WIDTH - 450, "scroll.png", "upTextureScroll.png", 2000,
-                        StoreButton.createBallButtons()
-                )},
-                {new Scroll(0, Visual.WIDTH - 450, "scroll.png", "upTextureScroll.png", 2000
-                        //donate
-                )}
+                {StoreButton.createCannonButtons()},
+                {StoreButton.createBallButtons()},
+                //{donate}
         });
         moneyBarStar.setAccount(account);
         moneyBarRuby.setAccount(account);
     }
 
     void render(SpriteBatch batch, double delta) {
-        canShoot[0] = balls.isEmpty();
+        if (!balls.isEmpty())
+            canShoot[0] = false;
         batch.draw(background, 0, 0);
         if (gameStarted)
         for (Power power : powers.toArray(new Power[0])) {
@@ -365,8 +423,10 @@ public class Game {
                 balls.remove(ball);
             else
                 ball.render(batch, delta, this);
-            if (balls.isEmpty())
+            if (balls.isEmpty()) {
+                canShoot[0] = true;
                 nextLevel();
+            }
         }
         for (int i = 0; i < lets.length; i++) {
             for (int j = 0; j < lets[0].length; j++) {
@@ -380,9 +440,14 @@ public class Game {
                     let.render(batch, delta);
             }
         cannon.render(batch);
+        if (aiming)
+            aimLine.render(batch, lets);
         if (gameStarted)
             score.render(batch);
-        boom.render(batch, delta);
+        if (!gameStarted) {
+            batch.draw(tip, 0, 0);
+        }
+        gameOver.render(batch, delta);
         if (gameStarted) {
             for (GameButton button : gameButtons)
                 button.render(batch, delta);
@@ -390,6 +455,8 @@ public class Game {
             for (Menu menu : menus)
                 menu.render(batch, delta);
         }
+        boom.render(batch, delta);
+        explosion.render(batch, delta);
         if (!dialog.isDismissed())
             dialog.render(batch, delta);
         loading.render(batch);
@@ -399,8 +466,8 @@ public class Game {
         Texture texture;
         boolean visible;
 
-        public Loading(String  texture) {
-            this.texture = new Texture(texture);
+        Loading(String texture) {
+            this.texture = textureBank.get(texture);
         }
 
         private void render(SpriteBatch batch) {

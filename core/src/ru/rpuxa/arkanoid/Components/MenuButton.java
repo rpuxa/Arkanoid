@@ -4,6 +4,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import ru.rpuxa.arkanoid.Main.Visual;
 
+import static ru.rpuxa.arkanoid.Main.Visual.textureBank;
+
 public class MenuButton extends Button {
 
     private int startX;
@@ -13,7 +15,7 @@ public class MenuButton extends Button {
 
     MenuButton(int x, int y, int width, int height, String texturePath, Parent parent) {
         super(x, y, width, height, 0);
-        texture = new Texture(texturePath);
+        texture = textureBank.get(texturePath);
         startX = x;
         this.parent = parent;
     }

@@ -4,6 +4,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import ru.rpuxa.arkanoid.Main.Visual;
 
+import static ru.rpuxa.arkanoid.Main.Visual.textureBank;
+
 public class Menu implements Parent, Touchable {
     int x;
     int width;
@@ -12,16 +14,16 @@ public class Menu implements Parent, Touchable {
     MenuButton button;
     Child[] children;
 
-    public Menu(int width, String background, boolean isLeft, int yButton, Child... children) {
+    public Menu(int width, String background, String buttonPath, boolean isLeft, int yButton, Child... children) {
         this.width = width;
-        this.background = new Texture(background);
+        this.background = textureBank.get(background);
         this.isLeft = isLeft;
         if (isLeft)
             x = -width;
         else
             x = Visual.WIDTH;
         int widthButton = 80;
-        button = new MenuButton((isLeft) ? widthButton / 2 : Visual.WIDTH - widthButton / 2, yButton, widthButton, 200, "menuButton.png", this);
+        button = new MenuButton((isLeft) ? widthButton / 2 : Visual.WIDTH - widthButton / 2, yButton, widthButton, 200, buttonPath, this);
         this.children = children;
         for (Child child : children)
             child.setParent(this);

@@ -5,6 +5,14 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class Number {
 
+    private static Texture[] textures;
+
+    public static void setTextures() {
+        textures = new Texture[10];
+        for (int i = 0; i < 10; i++)
+            textures[i] = new Texture("Digits\\" + i + ".png");
+    }
+
     public static Texture[] parseNumber(int num) {
         Texture[] textures = new Texture[(int) Math.round(Math.ceil(Math.log10(num + .1)))];
         for (int i = textures.length - 1; i >= 0; i--) {
